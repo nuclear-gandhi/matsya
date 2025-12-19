@@ -1,4 +1,4 @@
-# matsya
+# projectmatsya
 
 A new Flutter project.
 

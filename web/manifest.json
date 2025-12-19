@@ -1,6 +1,6 @@
 {
-    "name": "matsya",
-    "short_name": "matsya",
+    "name": "projectmatsya",
+    "short_name": "projectmatsya",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
