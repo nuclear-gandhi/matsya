@@ -7,7 +7,7 @@ class AppColors {
   /// =====================
   /// Colors (Dark Mode)
   /// =====================
-  static const Color backgroundPrimary = Color(0xFF0B0B0D);
+  static const Color backgroundPrimary = Color(0xFF000000);
   static const Color backgroundSecondary = Color(0xFF121216);
   static const Color surface = Color(0xFF1E1E22);
   static const Color surfaceSubtle = Color(0xFF232327);

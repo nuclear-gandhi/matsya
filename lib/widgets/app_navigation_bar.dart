@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../design/colors.dart';
 import '../design/spacing.dart';
 import 'model_selector_pill.dart';
+import 'touchable_surface.dart';
 
 /// Custom navigation bar widget
 class AppNavigationBar extends StatelessWidget {
@@ -24,35 +25,35 @@ class AppNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.background,
-        border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
-      ),
-      child: SafeArea(
-        bottom: false,
+    return SafeArea(
+      bottom: false,
+      child: Container(
+        width: double.infinity,
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
           ),
           child: Row(
             children: [
               // Menu icon on left
-              if (onMenuTap != null)
-                IconButton(
-                  icon: const Icon(
-                    Icons.menu,
-                    color: AppColors.textPrimary,
-                    size: 24,
-                  ),
-                  onPressed: onMenuTap,
+              if (onMenuTap != null) ...[
+                TouchableSurface(
+                  onTap: onMenuTap,
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 40,
-                    minHeight: 40,
+                  child: const Center(
+                    child: Icon(
+                      Icons.format_list_bulleted,
+                      color: AppColors.textPrimary,
+                      size: 24,
+                    ),
                   ),
                 ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
               // Title or Model selector in center
               Expanded(
                 child:
@@ -80,20 +81,23 @@ class AppNavigationBar extends StatelessWidget {
                         : const SizedBox.shrink(),
               ),
               // Compose/new message icon on right
-              if (onComposeTap != null)
-                IconButton(
-                  icon: const Icon(
-                    Icons.edit_outlined,
-                    color: AppColors.textPrimary,
-                    size: 24,
-                  ),
-                  onPressed: onComposeTap,
+              if (onComposeTap != null) ...[
+                const SizedBox(width: AppSpacing.xs),
+                TouchableSurface(
+                  onTap: onComposeTap,
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 40,
-                    minHeight: 40,
+                  child: const Center(
+                    child: Icon(
+                      Icons.edit_note,
+                      color: AppColors.textPrimary,
+                      size: 24,
+                    ),
                   ),
                 ),
+              ],
             ],
           ),
         ),

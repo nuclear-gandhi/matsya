@@ -1,8 +1,9 @@
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fllama/fllama.dart';
+import 'package:glassmorphic_ui_kit/glassmorphic_ui_kit.dart';
 import '../models/model_manager.dart';
-import '../widgets/futuristic_card.dart';
 import '../widgets/chat_message_bubble.dart';
 import '../widgets/app_navigation_bar.dart';
 import '../widgets/model_selector_dropdown.dart';
@@ -31,6 +32,15 @@ class _ChatScreenState extends State<ChatScreen> {
   String _currentModelName = '';
   String? _quantization;
 
+  static const List<String> _thinkingMessages = [
+    'Tangling with electrons...',
+    'Calculating neural weights...',
+    'Using electric brain...',
+    'Processing quantum thoughts...',
+    'Synapsing through circuits...',
+    'Weaving digital neurons...',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -50,22 +60,30 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _loadModelPath() async {
+  void _loadModelPath([String? modelName]) async {
+    final targetModelName = modelName ?? _currentModelName;
     try {
+      // Set loading state
+      if (mounted) {
+        setState(() {
+          _isModelLoading = true;
+        });
+      }
+
       // Check model type first
-      final modelType = await ModelManager.getModelType(widget.modelName);
+      final modelType = await ModelManager.getModelType(targetModelName);
       if (modelType == null) {
         throw Exception(
-          'Model "${widget.modelName}" not found. Please ensure it is installed.',
+          'Model "$targetModelName" not found. Please ensure it is installed.',
         );
       }
 
-      final path = await ModelManager.getModelPath(widget.modelName);
-      final exists = await ModelManager.modelExists(widget.modelName);
+      final path = await ModelManager.getModelPath(targetModelName);
+      final exists = await ModelManager.modelExists(targetModelName);
 
       if (!exists) {
         throw Exception(
-          'Model file not found: ${widget.modelName}. Please re-download the model.',
+          'Model file not found: $targetModelName. Please re-download the model.',
         );
       }
 
@@ -134,7 +152,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
       // Add placeholder for assistant response to show streaming
       final assistantMessageIndex = _messages.length;
-      _messages.add({'role': 'assistant', 'content': ''});
+      final randomThinkingMessage =
+          _thinkingMessages[Random().nextInt(_thinkingMessages.length)];
+      _messages.add({'role': 'assistant', 'content': randomThinkingMessage});
 
       String fullResponse = '';
       // Proper callback signature for fllamaChat: (response, openaiResponseJsonString, done)
@@ -209,8 +229,24 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _switchModel(String newModelName) {
     if (newModelName != _currentModelName) {
-      // Navigate to new chat screen with selected model
-      AppRouter.navigateToChat(context, newModelName);
+      // Update current model name
+      setState(() {
+        _currentModelName = newModelName;
+        _quantization = null; // Reset quantization before re-extracting
+      });
+
+      // Re-extract quantization for new model
+      _extractQuantization();
+
+      // Stop any ongoing requests
+      if (_isLoading) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+
+      // Reload model path for the new model
+      _loadModelPath(newModelName);
     }
   }
 
@@ -244,28 +280,33 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildDrawer() {
-    return Drawer(
-      backgroundColor: AppColors.backgroundPrimary,
-      child: ListView(
-        padding: EdgeInsets.zero,
+    return GlassDrawer(
+      blur: 15,
+      opacity: 0.2,
+      child: Column(
         children: [
-          DrawerHeader(
-            decoration: const BoxDecoration(
-              color: AppColors.backgroundSecondary,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Matsya',
-                  style: AppTheme.h1.copyWith(color: AppColors.textPrimary),
-                ),
-                const SizedBox(height: AppSpacing.spaceXS),
-                Text('Offline LLM Chat', style: AppTheme.bodySecondary),
-              ],
+          GlassContainer(
+            width: double.infinity,
+            height: 120,
+            borderRadius: BorderRadius.zero,
+            blur: 20,
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.spaceMD),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    'Matsya',
+                    style: AppTheme.h1.copyWith(color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(height: AppSpacing.spaceXS),
+                  Text('Offline LLM Chat', style: AppTheme.bodySecondary),
+                ],
+              ),
             ),
           ),
-          ListTile(
+          GlassDrawerTile(
             leading: const Icon(
               Icons.model_training,
               color: AppColors.textPrimary,
@@ -279,7 +320,7 @@ class _ChatScreenState extends State<ChatScreen> {
               AppRouter.navigateToModelList(context);
             },
           ),
-          ListTile(
+          GlassDrawerTile(
             leading: const Icon(Icons.settings, color: AppColors.textPrimary),
             title: const Text(
               'Settings',
@@ -309,7 +350,6 @@ class _ChatScreenState extends State<ChatScreen> {
         Expanded(
           child: _messages.isEmpty ? _buildEmptyState() : _buildMessagesList(),
         ),
-        if (_isLoading) _buildLoadingIndicator(),
         _buildInputField(),
       ],
     );
@@ -317,18 +357,22 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildErrorState() {
     return Center(
-      child: FuturisticCard(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.spaceLG),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+            const SizedBox(height: AppSpacing.spaceMD),
             Text(
               'Model not found',
               style: AppTheme.h2.copyWith(color: AppColors.error),
             ),
-            const SizedBox(height: AppSpacing.spaceMD),
+            const SizedBox(height: AppSpacing.spaceSM),
             const Text(
               'Please download the model first.',
               textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -337,14 +381,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: FuturisticCard(
-        child: const Text(
-          'Start a conversation!\nAsk me anything.',
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
   Widget _buildMessagesList() {
@@ -358,14 +395,6 @@ class _ChatScreenState extends State<ChatScreen> {
         final isUser = message['role'] == 'user';
         final content = message['content'] ?? '';
 
-        // Don't show empty assistant messages (streaming placeholder)
-        if (!isUser &&
-            content.isEmpty &&
-            index == _messages.length - 1 &&
-            _isLoading) {
-          return const SizedBox.shrink();
-        }
-
         return ChatMessageBubble(
           key: ValueKey('message_$index'),
           message: content,
@@ -377,86 +406,105 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildLoadingIndicator() {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.spaceMD),
-      child: CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
+    return const Padding(
+      padding: EdgeInsets.all(AppSpacing.spaceMD),
+      child: Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.textSecondary),
+            strokeWidth: 2,
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildInputField() {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.spaceMD),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundPrimary,
-        border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.spaceMD,
+        AppSpacing.spaceSM,
+        AppSpacing.spaceMD,
+        AppSpacing.spaceLG,
       ),
-      child: TextField(
-        controller: _messageController,
-        style: const TextStyle(color: AppColors.textPrimary),
-        decoration: InputDecoration(
-          hintText: 'Message',
-          hintStyle: const TextStyle(color: AppColors.textTertiary),
-          filled: true,
-          fillColor: AppColors.surface,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-            borderSide: const BorderSide(
-              color: AppColors.inputFocused,
-              width: 1,
-            ),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.spaceMD,
-            vertical: AppSpacing.spaceSM,
-          ),
-          suffixIconConstraints: const BoxConstraints(
-            maxHeight: 42,
-            maxWidth: 48,
-          ),
-          suffixIcon: Container(
-            margin: const EdgeInsets.fromLTRB(
-              AppSpacing.spaceXXS,
-              AppSpacing.spaceXXS,
-              AppSpacing.spaceXS,
-              AppSpacing.spaceXXS,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.accent,
-              borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-            ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.arrow_upward,
-                color: AppColors.backgroundPrimary,
-                size: 20,
+      color: Colors.transparent,
+      child: GlassContainer(
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(24),
+        blur: 10,
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF1C1C1E).withAlpha(255),
+            const Color(0xFF1C1C1E).withAlpha(255),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.spaceSM),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _messageController,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                  ),
+                  decoration: const InputDecoration(
+                    hintText: 'Message',
+                    hintStyle: TextStyle(
+                      color: Color(0xFF8E8E93),
+                      fontSize: 16,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  enabled: !_isLoading,
+                  onSubmitted: _isLoading ? null : (value) => _sendQuery(value),
+                ),
               ),
-              onPressed:
-                  _isLoading
-                      ? null
-                      : () {
-                        final message = _messageController.text.trim();
-                        if (message.isNotEmpty) {
-                          _sendQuery(message);
-                        }
-                      },
-              padding: const EdgeInsets.all(AppSpacing.spaceXXS),
-              // right margin to align with the input field
-              constraints: const BoxConstraints(maxHeight: 42, maxWidth: 42),
-            ),
+              if (!_isLoading)
+                Material(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(24),
+                    onTap: () {
+                      final message = _messageController.text.trim();
+                      if (message.isNotEmpty) {
+                        _sendQuery(message);
+                      }
+                    },
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_upward,
+                        color: Colors.black,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ),
+              if (_isLoading)
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
-        enabled: !_isLoading,
-        onSubmitted: _isLoading ? null : (value) => _sendQuery(value),
       ),
     );
   }

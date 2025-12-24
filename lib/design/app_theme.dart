@@ -8,10 +8,10 @@ class AppTheme {
   /// =====================
   /// Colors (Dark Mode)
   /// =====================
-  static const Color backgroundPrimary = Color(0xFFFFFFFF);
+  static const Color backgroundPrimary = Color(0xFF0B0B0D);
   static const Color backgroundSecondary = Color(0xFF121216);
-  static const Color surface = Color(0xFF1E1E22);
-  static const Color surfaceSubtle = Color(0xFF232327);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceSubtle = Color(0xFFFFFFFF);
 
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFB3B3B8);
@@ -66,6 +66,15 @@ class AppTheme {
     fontSize: 16,
     fontWeight: FontWeight.w400,
     height: 22 / 16,
+    letterSpacing: -0.2,
+    color: textPrimary,
+  );
+
+  static TextStyle get message => GoogleFonts.roboto(
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    height: 22 / 16,
+    letterSpacing: -0.2,
     color: textPrimary,
   );
 

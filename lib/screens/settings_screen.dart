@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:glassmorphic_ui_kit/glassmorphic_ui_kit.dart';
 import '../design/colors.dart';
 import '../design/spacing.dart';
 import '../design/app_theme.dart';
@@ -102,28 +103,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  TextField(
-                    controller: _tokenController,
-                    obscureText: !_tokenVisible,
-                    style: const TextStyle(color: AppColors.textPrimary),
-                    decoration: InputDecoration(
-                      labelText: 'Hugging Face Token',
-                      labelStyle: const TextStyle(color: AppColors.textSecondary),
-                      hintText: 'hf_...',
-                      hintStyle: const TextStyle(color: AppColors.textTertiary),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _tokenVisible ? Icons.visibility : Icons.visibility_off,
-                          color: AppColors.textSecondary,
+                  GlassContainer(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                    blur: 10,
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.surface.withAlpha(51),
+                        AppColors.surface.withAlpha(26),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    child: TextField(
+                      controller: _tokenController,
+                      obscureText: !_tokenVisible,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(
+                        labelText: 'Hugging Face Token',
+                        labelStyle: const TextStyle(color: AppColors.textSecondary),
+                        hintText: 'hf_...',
+                        hintStyle: const TextStyle(color: AppColors.textTertiary),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _tokenVisible ? Icons.visibility : Icons.visibility_off,
+                            color: AppColors.textSecondary,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _tokenVisible = !_tokenVisible;
+                            });
+                          },
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _tokenVisible = !_tokenVisible;
-                          });
-                        },
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                        border: InputBorder.none,
                       ),
                     ),
                   ),

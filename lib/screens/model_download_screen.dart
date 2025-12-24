@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:glassmorphic_ui_kit/glassmorphic_ui_kit.dart';
 import '../models/model_manager.dart';
 import '../services/hugging_face_service.dart';
 import '../widgets/futuristic_button.dart';
@@ -213,12 +214,14 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            LinearProgressIndicator(
+                            GlassProgressIndicator(
                               value: _downloadProgress,
-                              minHeight: 8,
-                              backgroundColor: AppColors.surfaceSubtle,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.accent,
+                              blur: 10,
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.accent.withAlpha(200),
+                                  AppColors.accent.withAlpha(150),
+                                ],
                               ),
                             ),
                             const SizedBox(height: AppSpacing.spaceXS),
@@ -231,10 +234,9 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
                       else
                         FuturisticButton(
                           label: 'Download',
-                          onPressed:
-                              _isDownloading
-                                  ? () {}
-                                  : () => _downloadModel(
+                          onPressed: _isDownloading
+                              ? null
+                              : () => _downloadModel(
                                     model['name']!,
                                     model['repoId']!,
                                     model['filename']!,
@@ -254,38 +256,66 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
             FuturisticCard(
               child: Column(
                 children: [
-                  TextField(
-                    controller: _repoController,
-                    decoration: InputDecoration(
-                      hintText: 'Repository ID (e.g., user/model)',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                      ),
+                  GlassContainer(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                    blur: 10,
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.surface.withAlpha(51),
+                        AppColors.surface.withAlpha(26),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    enabled: !_isDownloading,
+                    child: TextField(
+                      controller: _repoController,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(
+                        hintText: 'Repository ID (e.g., user/model)',
+                        hintStyle: const TextStyle(color: AppColors.textTertiary),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.all(AppSpacing.spaceSM),
+                      ),
+                      enabled: !_isDownloading,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.spaceMD),
-                  TextField(
-                    controller: _filenameController,
-                    decoration: InputDecoration(
-                      hintText: 'Filename (e.g., model.gguf)',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                      ),
+                  GlassContainer(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                    blur: 10,
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.surface.withAlpha(51),
+                        AppColors.surface.withAlpha(26),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    enabled: !_isDownloading,
+                    child: TextField(
+                      controller: _filenameController,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(
+                        hintText: 'Filename (e.g., model.gguf)',
+                        hintStyle: const TextStyle(color: AppColors.textTertiary),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.all(AppSpacing.spaceSM),
+                      ),
+                      enabled: !_isDownloading,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.spaceMD),
                   if (_downloadingModel == 'custom')
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        LinearProgressIndicator(
+                        GlassProgressIndicator(
                           value: _downloadProgress,
-                          minHeight: 8,
-                          backgroundColor: AppColors.surfaceSubtle,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.accent,
+                          blur: 10,
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.accent.withAlpha(200),
+                              AppColors.accent.withAlpha(150),
+                            ],
                           ),
                         ),
                         const SizedBox(height: AppSpacing.spaceXS),
@@ -298,12 +328,11 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
                     ),
                   FuturisticButton(
                     label: 'Download Custom Model',
-                    onPressed:
-                        _isDownloading ||
-                                _repoController.text.isEmpty ||
-                                _filenameController.text.isEmpty
-                            ? () {}
-                            : () => _downloadModel(
+                    onPressed: _isDownloading ||
+                            _repoController.text.isEmpty ||
+                            _filenameController.text.isEmpty
+                        ? null
+                        : () => _downloadModel(
                               'custom',
                               _repoController.text,
                               _filenameController.text,

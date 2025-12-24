@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:glassmorphic_ui_kit/glassmorphic_ui_kit.dart';
 import '../models/model_manager.dart';
 import '../widgets/futuristic_button.dart';
 import '../widgets/futuristic_card.dart';
@@ -33,52 +34,73 @@ class _ModelListScreenState extends State<ModelListScreen> {
   void _deleteModel(String modelName) {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: AppColors.backgroundPrimary,
-            title: Text('Delete $modelName?'),
-            content: const Text('This action cannot be undone.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  try {
-                    await ModelManager.deleteModel(modelName);
-                    Navigator.pop(context);
-                    _refreshModels();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('$modelName deleted'),
-                          backgroundColor: AppColors.success,
-                          duration: const Duration(seconds: 3),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    debugPrint('Error deleting model: $e');
-                    Navigator.pop(context);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error deleting model: $e'),
-                          backgroundColor: AppColors.error,
-                          duration: const Duration(seconds: 5),
-                        ),
-                      );
-                    }
-                  }
-                },
-                child: Text(
-                  'Delete',
-                  style: TextStyle(color: AppColors.error),
-                ),
-              ),
-            ],
+      builder: (context) => GlassDialog(
+        blur: 15,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.surface.withAlpha(51),
+            AppColors.surface.withAlpha(26),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        title: Text(
+          'Delete $modelName?',
+          style: const TextStyle(color: AppColors.textPrimary),
+        ),
+        content: const Text(
+          'This action cannot be undone.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+        actions: [
+          GlassButton(
+            onPressed: () => Navigator.pop(context),
+            blur: 10,
+            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
           ),
+          GlassButton(
+            onPressed: () async {
+              try {
+                await ModelManager.deleteModel(modelName);
+                Navigator.pop(context);
+                _refreshModels();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('$modelName deleted'),
+                      backgroundColor: AppColors.success,
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                }
+              } catch (e) {
+                debugPrint('Error deleting model: $e');
+                Navigator.pop(context);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error deleting model: $e'),
+                      backgroundColor: AppColors.error,
+                      duration: const Duration(seconds: 5),
+                    ),
+                  );
+                }
+              }
+            },
+            blur: 10,
+            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+            child: Text(
+              'Delete',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

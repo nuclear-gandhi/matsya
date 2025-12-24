@@ -1,7 +1,8 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:matsya/design/app_theme.dart';
 import '../design/colors.dart';
 import '../design/spacing.dart';
-import '../design/app_theme.dart';
 
 /// Chat message bubble widget
 class ChatMessageBubble extends StatelessWidget {
@@ -22,30 +23,29 @@ class ChatMessageBubble extends StatelessWidget {
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
+          maxWidth: MediaQuery.of(context).size.width * 0.8,
         ),
-        margin: padding ??
-            const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.xs,
-            ),
-        padding: const EdgeInsets.symmetric(
+        margin: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
+          vertical: AppSpacing.xs,
         ),
-        decoration: BoxDecoration(
-          color: isUser
-              ? AppColors.userMessageBackground
-              : AppColors.assistantMessageBackground,
-          borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        ),
+        padding:
+            isUser
+                ? const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: 10,
+                )
+                : const EdgeInsets.symmetric(vertical: 10),
+        decoration:
+            isUser
+                ? BoxDecoration(
+                  color: const Color(0xFF1C1C1E),
+                  borderRadius: BorderRadius.circular(20),
+                )
+                : null,
         child: Text(
           message,
-          style: const TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 15,
-            height: 1.4,
-          ),
+          style: AppTheme.message.copyWith(color: AppColors.textPrimary),
         ),
       ),
     );
