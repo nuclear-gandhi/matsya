@@ -1,12 +1,15 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/model_manager.dart';
 import '../widgets/futuristic_button.dart';
 import '../widgets/futuristic_card.dart';
-import 'chat_screen.dart';
-import 'model_download_screen.dart';
+import '../design/app_theme.dart';
+import '../design/colors.dart';
+import '../design/spacing.dart';
+import '../navigation/app_router.dart';
 
 class ModelListScreen extends StatefulWidget {
-  const ModelListScreen({Key? key}) : super(key: key);
+  const ModelListScreen({super.key});
 
   @override
   State<ModelListScreen> createState() => _ModelListScreenState();
@@ -32,7 +35,7 @@ class _ModelListScreenState extends State<ModelListScreen> {
       context: context,
       builder:
           (context) => AlertDialog(
-            backgroundColor: Colors.black,
+            backgroundColor: AppColors.backgroundPrimary,
             title: Text('Delete $modelName?'),
             content: const Text('This action cannot be undone.'),
             actions: [
@@ -42,16 +45,36 @@ class _ModelListScreenState extends State<ModelListScreen> {
               ),
               TextButton(
                 onPressed: () async {
-                  await ModelManager.deleteModel(modelName);
-                  Navigator.pop(context);
-                  _refreshModels();
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('$modelName deleted')));
+                  try {
+                    await ModelManager.deleteModel(modelName);
+                    Navigator.pop(context);
+                    _refreshModels();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('$modelName deleted'),
+                          backgroundColor: AppColors.success,
+                          duration: const Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    debugPrint('Error deleting model: $e');
+                    Navigator.pop(context);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error deleting model: $e'),
+                          backgroundColor: AppColors.error,
+                          duration: const Duration(seconds: 5),
+                        ),
+                      );
+                    }
+                  }
                 },
-                child: const Text(
+                child: Text(
                   'Delete',
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: AppColors.error),
                 ),
               ),
             ],
@@ -71,7 +94,26 @@ class _ModelListScreenState extends State<ModelListScreen> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            debugPrint('Error loading models: ${snapshot.error}');
+            return Center(
+              child: FuturisticCard(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Error loading models',
+                      style: AppTheme.h2.copyWith(color: AppColors.error),
+                    ),
+                    const SizedBox(height: AppSpacing.spaceXS),
+                    Text(
+                      '${snapshot.error}',
+                      textAlign: TextAlign.center,
+                      style: AppTheme.bodySecondary,
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
 
           final models = snapshot.data ?? [];
@@ -82,20 +124,16 @@ class _ModelListScreenState extends State<ModelListScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
+                    Text(
                       'No models downloaded yet',
-                      style: TextStyle(fontSize: 18),
+                      style: AppTheme.h2,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.spaceMD),
                     FuturisticButton(
                       label: 'Download a Model',
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ModelDownloadScreen(),
-                          ),
-                        ).then((_) => _refreshModels());
+                        AppRouter.navigateToModelDownload(context)
+                            .then((_) => _refreshModels());
                       },
                     ),
                   ],
@@ -105,7 +143,7 @@ class _ModelListScreenState extends State<ModelListScreen> {
           }
 
           return Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.spaceMD),
             child: Column(
               children: [
                 Expanded(
@@ -114,7 +152,7 @@ class _ModelListScreenState extends State<ModelListScreen> {
                     itemBuilder: (context, index) {
                       final model = models[index];
                       return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.spaceXS),
                         child: FuturisticCard(
                           child: ListTile(
                             title: Text(model),
@@ -122,11 +160,19 @@ class _ModelListScreenState extends State<ModelListScreen> {
                               future: ModelManager.getModelSize(model),
                               builder: (context, snapshot) {
                                 if (snapshot.hasData) {
-                                  final sizeInMB =
-                                      snapshot.data! / (1024 * 1024);
-                                  return Text(
-                                    '${sizeInMB.toStringAsFixed(2)} MB',
-                                  );
+                                  final sizeInBytes = snapshot.data!;
+                                  final sizeInMB = sizeInBytes / (1024 * 1024);
+                                  // Display in GB if >= 1GB, otherwise MB
+                                  if (sizeInMB >= 1024) {
+                                    final sizeInGB = sizeInMB / 1024;
+                                    return Text(
+                                      '${sizeInGB.toStringAsFixed(2)} GB',
+                                    );
+                                  } else {
+                                    return Text(
+                                      '${sizeInMB.toStringAsFixed(2)} MB',
+                                    );
+                                  }
                                 }
                                 return const Text('Computing size...');
                               },
@@ -141,13 +187,7 @@ class _ModelListScreenState extends State<ModelListScreen> {
                                   ],
                             ),
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) => ChatScreen(modelName: model),
-                                ),
-                              );
+                              AppRouter.navigateToChat(context, model);
                             },
                           ),
                         ),
@@ -158,12 +198,8 @@ class _ModelListScreenState extends State<ModelListScreen> {
                 FuturisticButton(
                   label: 'Download New Model',
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ModelDownloadScreen(),
-                      ),
-                    ).then((_) => _refreshModels());
+                    AppRouter.navigateToModelDownload(context)
+                        .then((_) => _refreshModels());
                   },
                 ),
               ],

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:glassmorphic_ui_kit/glassmorphic_ui_kit.dart';
+import '../design/app_theme.dart';
+import '../design/spacing.dart';
 
 class FuturisticCard extends StatelessWidget {
   final Widget child;
@@ -8,29 +11,24 @@ class FuturisticCard extends StatelessWidget {
   const FuturisticCard({
     Key? key,
     required this.child,
-    this.padding = const EdgeInsets.all(16.0),
-    this.margin = const EdgeInsets.all(8.0),
+    this.padding = const EdgeInsets.all(AppSpacing.spaceMD),
+    this.margin = const EdgeInsets.all(AppSpacing.spaceXS),
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: margin,
-      padding: padding,
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.tealAccent.withOpacity(0.5),
-            blurRadius: 10,
-            spreadRadius: 2,
-            offset: const Offset(0, 5),
-          ),
-        ],
-        border: Border.all(color: Colors.tealAccent, width: 2),
+      child: GlassContainer(
+        height: 100, // Minimum height, will expand with content
+        width: double.infinity,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        blur: 10,
+        child: Padding(
+          padding: padding,
+          child: child,
+        ),
       ),
-      child: child,
     );
   }
 }

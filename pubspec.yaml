@@ -41,6 +41,12 @@ dependencies:
       ref: main
   http: ^1.1.0
   path_provider: ^2.0.0
+  flutter_secure_storage: ^9.0.0
+  # flutter_gemma:
+  #   git:
+  #     url: https://github.com/google/flutter_gemma.git
+  #     ref: main
+  glassmorphic_ui_kit: ^1.0.1
 
 dev_dependencies:
   flutter_test:

@@ -1,11 +1,16 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/model_manager.dart';
 import '../services/hugging_face_service.dart';
 import '../widgets/futuristic_button.dart';
 import '../widgets/futuristic_card.dart';
+import '../design/app_theme.dart';
+import '../design/colors.dart';
+import '../design/spacing.dart';
 
 class ModelDownloadScreen extends StatefulWidget {
-  const ModelDownloadScreen({Key? key}) : super(key: key);
+  const ModelDownloadScreen({super.key});
 
   @override
   State<ModelDownloadScreen> createState() => _ModelDownloadScreenState();
@@ -59,6 +64,8 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
   String? _downloadingModel;
   double _downloadProgress = 0;
   bool _isDownloading = false;
+  DateTime? _lastProgressUpdate;
+  static const Duration _progressThrottle = Duration(milliseconds: 500);
 
   @override
   void initState() {
@@ -95,14 +102,20 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
 
       if (exists) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('$name already exists')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$name already exists'),
+              backgroundColor: AppColors.warning,
+              duration: const Duration(seconds: 3),
+            ),
+          );
         }
-        setState(() {
-          _isDownloading = false;
-          _downloadingModel = null;
-        });
+        if (mounted) {
+          setState(() {
+            _isDownloading = false;
+            _downloadingModel = null;
+          });
+        }
         return;
       }
 
@@ -111,24 +124,53 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
         filename,
         modelPath,
         onProgress: (received, total) {
-          if (mounted) {
-            setState(() {
-              _downloadProgress = total > 0 ? received / total : 0;
-            });
+          // Throttle progress updates to avoid UI spam
+          final now = DateTime.now();
+          if (_lastProgressUpdate == null ||
+              now.difference(_lastProgressUpdate!) >= _progressThrottle) {
+            _lastProgressUpdate = now;
+            if (mounted) {
+              setState(() {
+                _downloadProgress = total > 0 ? received / total : 0;
+              });
+            }
           }
         },
       );
-    } catch (e) {
+
+      // Verify download completed successfully
+      final downloadExists = await ModelManager.modelExists(filename);
+      if (!downloadExists) {
+        throw Exception('Download completed but file not found');
+      }
+
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error downloading model: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$name downloaded successfully'),
+            backgroundColor: AppColors.success,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error downloading model: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error downloading model: $e'),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
     } finally {
-      if (!_isDownloading) {
+      if (mounted) {
         setState(() {
           _isDownloading = false;
           _downloadingModel = null;
+          _downloadProgress = 0;
+          _lastProgressUpdate = null;
         });
       }
     }
@@ -139,37 +181,34 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Download Models'), elevation: 0),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.spaceMD),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Recommended Models',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: AppTheme.h1,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.spaceMD),
             ..._recommendedModels.map(
               (model) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.spaceXS),
                 child: FuturisticCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         model['name']!,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: AppTheme.h2,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.spaceXXS),
                       Text(
                         'Size: ${model['size']}',
-                        style: const TextStyle(fontSize: 12),
+                        style: AppTheme.caption,
                       ),
-                      const SizedBox(height: 8),
-                      Text(model['description']!),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.spaceXS),
+                      Text(model['description']!, style: AppTheme.body),
+                      const SizedBox(height: AppSpacing.spaceMD),
                       if (_downloadingModel == model['name'])
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,14 +216,15 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
                             LinearProgressIndicator(
                               value: _downloadProgress,
                               minHeight: 8,
-                              backgroundColor: Colors.grey[800],
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                Colors.tealAccent,
+                              backgroundColor: AppColors.surfaceSubtle,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.accent,
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: AppSpacing.spaceXS),
                             Text(
                               '${(_downloadProgress * 100).toStringAsFixed(0)}%',
+                              style: AppTheme.bodySecondary,
                             ),
                           ],
                         )
@@ -205,12 +245,12 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 32),
-            const Text(
+            const SizedBox(height: AppSpacing.spaceXL),
+            Text(
               'Custom Model',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: AppTheme.h1,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.spaceMD),
             FuturisticCard(
               child: Column(
                 children: [
@@ -219,23 +259,23 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
                     decoration: InputDecoration(
                       hintText: 'Repository ID (e.g., user/model)',
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                       ),
                     ),
                     enabled: !_isDownloading,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.spaceMD),
                   TextField(
                     controller: _filenameController,
                     decoration: InputDecoration(
                       hintText: 'Filename (e.g., model.gguf)',
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                       ),
                     ),
                     enabled: !_isDownloading,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.spaceMD),
                   if (_downloadingModel == 'custom')
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -243,16 +283,17 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
                         LinearProgressIndicator(
                           value: _downloadProgress,
                           minHeight: 8,
-                          backgroundColor: Colors.grey[800],
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            Colors.tealAccent,
+                          backgroundColor: AppColors.surfaceSubtle,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.accent,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.spaceXS),
                         Text(
                           '${(_downloadProgress * 100).toStringAsFixed(0)}%',
+                          style: AppTheme.bodySecondary,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.spaceMD),
                       ],
                     ),
                   FuturisticButton(
